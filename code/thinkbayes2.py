@@ -567,6 +567,17 @@ class Pmf(_DictWrapper):
             var += p * (x - mu) ** 2
         return var
 
+    def Std(self, mu=None):
+        """Computes the standard deviation of a PMF.
+
+        mu: the point around which the variance is computed;
+                if omitted, computes the mean
+
+        returns: float standard deviation
+        """
+        var = self.Var(mu)
+        return math.sqrt(var)
+
     def MaximumLikelihood(self):
         """Returns the value with the highest probability.
 
@@ -806,7 +817,7 @@ def MakePmfFromItems(t, label=None):
     Returns:
         Pmf object
     """
-    return Pmf(t, label=label)
+    return Pmf(dict(t), label=label)
 
 
 def MakePmfFromHist(hist, label=None):
@@ -879,13 +890,14 @@ class Cdf(object):
                 self.label = label if label is not None else obj.label
 
         if obj is None:
+            # caller does not provide obj, make an empty Cdf
             self.xs = np.asarray([])
             self.ps = np.asarray([])
             if ps is not None:
                 logging.warning("Cdf: can't pass ps without also passing xs.")
             return
         else:
-            # if the caller provides xs and ps, we're done            
+            # if the caller provides xs and ps, just store them          
             if ps is not None:
                 if isinstance(ps, str):
                     logging.warning("Cdf: ps can't be a string")
@@ -894,7 +906,7 @@ class Cdf(object):
                 self.ps = np.asarray(ps)
                 return
 
-        # caller has provided a single value
+        # caller has provided just obj, not ps
         if isinstance(obj, Cdf):
             self.xs = copy.copy(obj.xs)
             self.ps = copy.copy(obj.ps)
@@ -1071,8 +1083,8 @@ class Cdf(object):
     def Sample(self, n):
         """Generates a random sample from this distribution.
         
-        Args:
-            n: int length of the sample
+        n: int length of the sample
+        returns: NumPy array
         """
         ps = np.random.random(n)
         return self.ValueArray(ps)
@@ -1164,7 +1176,7 @@ def MakeCdfFromItems(items, label=None):
     Returns:
         cdf: list of (value, fraction) pairs
     """
-    return Cdf(items, label=label)
+    return Cdf(dict(items), label=label)
 
 
 def MakeCdfFromDict(d, label=None):
@@ -1410,7 +1422,7 @@ class Pdf(object):
         """
         label = options.pop('label', '')
         xs, ds = self.Render(**options)
-        return Pmf(zip(xs, ds), label=label)
+        return Pmf(dict(zip(xs, ds)), label=label)
 
     def Render(self, **options):
         """Generates a sequence of points suitable for plotting.
